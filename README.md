@@ -1,6 +1,6 @@
 # CSL2020_FINAl_Project_FALL_2025
 
-# 🧩 Maze Solver & Generator
+# 🧩 Maze Solver & Generator using multiple algorithms!
 
 A complete C++ implementation of maze generation and solving algorithms. Perfect for learning about pathfinding, algorithms, and C++ programming!
 
