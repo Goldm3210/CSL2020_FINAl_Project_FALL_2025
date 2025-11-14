@@ -1,3 +1,146 @@
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include <vector>
+#include <ctime>
+#include <algorithm>
+#include <sstream>
+#include <unordered_map>
+#include <queue>
+#include <time.h>
+using namespace std;
+
+// Doctor database
+struct Doctor {
+    int id;
+    string name;
+    string specialty;
+    int experience; // years
+    bool available;
+    
+    Doctor(int _id, string _name, string _spec, int _exp) 
+        : id(_id), name(_name), specialty(_spec), experience(_exp), available(true) {}
+};
+
+// Patient node (for linked list)
+struct Patient {
+    int id;
+    string name;
+    int age;
+    string condition;
+    int emergencyLevel; // 1=Critical, 2=Urgent, 3=Non-Urgent
+    string room;
+    string procedure;
+    int timeRequired; // minutes
+    string doctorName;
+    string admissionTime;
+    Patient* next;
+
+    Patient(int _id, string _name, int _age, string _cond, int _level, 
+            string _room, string _proc, int _time, string _doc, string _adm)
+        : id(_id), name(_name), age(_age), condition(_cond), emergencyLevel(_level),
+          room(_room), procedure(_proc), timeRequired(_time), doctorName(_doc), 
+          admissionTime(_adm), next(nullptr) {}
+};
+
+// For priority queue (min-heap by emergency level, then admission time)
+struct PriorityQueueNode {
+    int id;
+    int emergencyLevel;
+    time_t admissionTime;
+    
+    PriorityQueueNode(int _id, int _level, time_t _time) 
+        : id(_id), emergencyLevel(_level), admissionTime(_time) {}
+    
+    // Min-heap: lower emergency level (1=Critical) has higher priority
+    bool operator>(const PriorityQueueNode& other) const {
+        if (emergencyLevel != other.emergencyLevel) {
+            return emergencyLevel > other.emergencyLevel;
+        }
+        return admissionTime > other.admissionTime;
+    }
+};
+
+// For room allocation heap
+struct RoomNode {
+    string name;
+    int priority; // 1=ICU, 2=Ward, 3=OPD
+    bool occupied;
+    
+    RoomNode(string n, int p) : name(n), priority(p), occupied(false) {}
+    
+    bool operator>(const RoomNode& other) const {
+        return priority > other.priority;
+    }
+};
+
+class Hospital {
+private:
+    Patient* head;  // Linked list for sequential access
+    
+    // HASHING: O(1) patient lookup by ID
+    unordered_map<int, Patient*> patientMap;
+    
+    // PRIORITY QUEUE: O(log n) emergency-based processing
+    priority_queue<PriorityQueueNode, vector<PriorityQueueNode>, greater<PriorityQueueNode>> emergencyQueue;
+    
+    // MIN-HEAP for room allocation (prioritize ICU > Ward > OPD)
+    priority_queue<RoomNode, vector<RoomNode>, greater<RoomNode>> roomHeap;
+    
+    int nextId;
+    vector<Doctor> doctors;
+
+    void initDoctors() {
+        doctors = {
+            Doctor(101, "Dr. Smith", "Cardiology", 15),
+            Doctor(102, "Dr. Johnson", "Neurosurgery", 12),
+            Doctor(103, "Dr. Williams", "Orthopedics", 8),
+            Doctor(104, "Dr. Brown", "General Surgery", 10),
+            Doctor(105, "Dr. Davis", "Internal Medicine", 7),
+            Doctor(106, "Dr. Miller", "Pediatrics", 9)
+        };
+    }
+
+    // Initialize room heap with correct counts: 3 ICU, 5 Ward, 10 OPD
+    void initRooms() {
+        // ICU rooms (priority 1) - 3 rooms
+        roomHeap.push(RoomNode("ICU-01", 1));
+        roomHeap.push(RoomNode("ICU-02", 1));
+        roomHeap.push(RoomNode("ICU-03", 1));
+        
+        // Ward rooms (priority 2) - 5 rooms
+        roomHeap.push(RoomNode("WARD-A1", 2));
+        roomHeap.push(RoomNode("WARD-A2", 2));
+        roomHeap.push(RoomNode("WARD-B1", 2));
+        roomHeap.push(RoomNode("WARD-B2", 2));
+        roomHeap.push(RoomNode("WARD-C1", 2));
+        
+        // OPD rooms (priority 3) - 10 rooms
+        roomHeap.push(RoomNode("OPD-1", 3));
+        roomHeap.push(RoomNode("OPD-2", 3));
+        roomHeap.push(RoomNode("OPD-3", 3));
+        roomHeap.push(RoomNode("OPD-4", 3));
+        roomHeap.push(RoomNode("OPD-5", 3));
+        roomHeap.push(RoomNode("OPD-6", 3));
+        roomHeap.push(RoomNode("OPD-7", 3));
+        roomHeap.push(RoomNode("OPD-8", 3));
+        roomHeap.push(RoomNode("OPD-9", 3));
+        roomHeap.push(RoomNode("OPD-10", 3));
+    }
+
+    string getCurrentTime() {
+        time_t now = time(0);
+        tm* ltm = localtime(&now);
+        ostringstream oss;
+        oss << 1900 + ltm->tm_year << "-"
+            << setw(2) << setfill('0') << 1 + ltm->tm_mon << "-"
+            << setw(2) << setfill('0') << ltm->tm_mday << " "
+            << setw(2) << setfill('0') << ltm->tm_hour << ":"
+            << setw(2) << setfill('0') << ltm->tm_min;
+        return oss.str();
+    }
+
+    // CORRECTED: Strict room assignment rules
 string assignRoom(int level) {
         // Use MIN-HEAP for optimal room allocation
         vector<RoomNode> tempRooms;
