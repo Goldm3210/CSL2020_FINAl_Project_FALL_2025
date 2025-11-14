@@ -341,3 +341,172 @@ public:
         
         nextId++;
     }
+
+    string getPriorityLabel(int level) {
+        switch (level) {
+            case 1: return "CRITICAL (Immediate care)";
+            case 2: return "URGENT (Within 1 hour)";
+            case 3: return "NON-URGENT (Routine)";
+            default: return "Unknown";
+        }
+    }
+
+    void displayPatients() {
+        if (!head) {
+            cout << "\nNo patients admitted." << endl;
+            return;
+        }
+        
+        cout << "\n=== CURRENT PATIENTS (by priority) ===\n";
+        cout << left << setw(6) << "ID"
+             << setw(12) << "Name"
+             << setw(4) << "Age"
+             << setw(15) << "Room"
+             << setw(20) << "Procedure"
+             << setw(12) << "Time(min)"
+             << setw(25) << "Doctor"
+             << setw(12) << "Priority" << endl;
+        cout << string(105, '-') << endl;
+
+        Patient* curr = head;
+        while (curr) {
+            cout << left 
+                 << setw(6) << curr->id
+                 << setw(12) << curr->name.substr(0, 11)
+                 << setw(4) << curr->age
+                 << setw(15) << (curr->room.length() > 14 ? curr->room.substr(0, 14) : curr->room)
+                 << setw(20) << (curr->procedure.length() > 19 ? curr->procedure.substr(0, 19) : curr->procedure)
+                 << setw(12) << curr->timeRequired
+                 << setw(25) << (curr->doctorName.length() > 24 ? curr->doctorName.substr(0, 24) : curr->doctorName)
+                 << setw(12) << (curr->emergencyLevel == 1 ? "CRITICAL" : 
+                                curr->emergencyLevel == 2 ? "URGENT" : "NON-URGENT") << endl;
+            curr = curr->next;
+        }
+        cout << "========================================" << endl;
+    }
+
+    void dischargePatient() {
+        if (!head) {
+            cout << "\nNo patients to discharge." << endl;
+            return;
+        }
+
+        int id;
+        cout << "\nEnter Patient ID to discharge: ";
+        cin >> id;
+
+        // HASHING: O(1) lookup
+        if (patientMap.find(id) == patientMap.end()) {
+            cout << "Patient with ID " << id << " not found." << endl;
+            return;
+        }
+
+        Patient* patient = patientMap[id];
+        
+        // Free doctor
+        string doctorName = patient->doctorName;
+        size_t expPos = doctorName.find("(Exp:");
+        if (expPos != string::npos) {
+            string docName = doctorName.substr(0, expPos-1);
+            for (auto& doc : doctors) {
+                if (doc.name == docName) {
+                    doc.available = true;
+                }
+            }
+        }
+
+        // Remove from linked list
+        Patient* curr = head;
+        Patient* prev = nullptr;
+        while (curr && curr->id != id) {
+            prev = curr;
+            curr = curr->next;
+        }
+        if (curr) {
+            if (prev == nullptr) {
+                head = curr->next;
+            } else {
+                prev->next = curr->next;
+            }
+        }
+
+        // Remove from hash map
+        patientMap.erase(id);
+        
+        // Note: Priority queue uses lazy deletion 
+
+        cout << "Discharged patient: " << patient->name 
+             << " (ID: " << patient->id << ")" << endl;
+        cout << "   Room " << patient->room.substr(0, patient->room.find(" ")) 
+             << " is now available" << endl;
+        
+        delete patient;
+    }
+
+    void findPatient() {
+        if (!head) {
+            cout << "\nNo patients admitted." << endl;
+            return;
+        }
+
+        int id;
+        cout << "\nEnter Patient ID to search: ";
+        cin >> id;
+
+        // HASHING: O(1) lookup
+        auto it = patientMap.find(id);
+        if (it != patientMap.end()) {
+            Patient* p = it->second;
+            
+            cout << "\nPATIENT DETAILS:" << endl;
+            cout << "ID: " << p->id << endl;
+            cout << "Name: " << p->name << endl;
+            cout << "Age: " << p->age << endl;
+            cout << "Condition: " << p->condition << endl;
+            cout << "Emergency Level: " << getPriorityLabel(p->emergencyLevel) << endl;
+            cout << "Room: " << p->room << endl;
+            cout << "Procedure: " << p->procedure << " (" << p->timeRequired << " minutes)" << endl;
+            cout << "Assigned Doctor: " << p->doctorName << endl;
+            cout << "Admission Time: " << p->admissionTime << endl;
+        } else {
+            cout << "Patient with ID " << id << " not found." << endl;
+        }
+    }
+};
+
+// Main menu
+int main() {
+    Hospital hospital;
+    int choice;
+
+    do {
+        cout << "\n--- MENU ---\n";
+        cout << "1. Admit Patient\n";
+        cout << "2. Display All Patients\n";
+        cout << "3. Discharge Patient (by ID)\n";
+        cout << "4. Find Patient (by ID)\n";
+        cout << "0. Exit\n";
+        cout << "Enter choice: ";
+
+        if (!(cin >> choice)) {
+            cout << "Invalid input. Please enter a number." << endl;
+            cin.clear();
+            cin.ignore(1000, '\n');
+            continue;
+        }
+
+        switch (choice) {
+            case 1: hospital.admitPatient(); break;
+            case 2: hospital.displayPatients(); break;
+            case 3: hospital.dischargePatient(); break;
+            case 4: hospital.findPatient(); break;
+            case 0: 
+                cout << "\nThank you for using Hospital Management System!" << endl;
+                break;
+            default:
+                cout << "Invalid choice. Try again." << endl;
+        }
+    } while (choice != 0);
+
+    return 0;
+}
