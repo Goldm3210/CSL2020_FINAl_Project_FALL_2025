@@ -1,26 +1,36 @@
 # CSL2020_FINAl_Project_FALL_2025
+Hospital Management System (DSA Project)
 
-# 🧩 Maze Solver & Generator using multiple algorithms!
+This project is a simplified Hospital Management System built to demonstrate core data structures in a realistic scenario. It supports patient admission, triage, room allocation, doctor assignment, discharge, and instant lookup.
 
-A complete C++ implementation of maze generation and solving algorithms. Perfect for learning about pathfinding, algorithms, and C++ programming!
+Key Features
 
-## 🎯 What This Project Does
+Admit new patients with automatic room, procedure, and doctor assignment
 
-This project can:
-- **Generate** random mazes using different algorithms
-- **Solve** mazes using multiple pathfinding methods
-- **Compare** algorithm performance side-by-side
-- **Save/Load** mazes to files
-- **Visualize** solutions in the terminal
+Priority-based ordering of patients (Critical → Urgent → Non-Urgent)
 
-## 🚀 Quick Start Guide
+Search patients by ID in constant time
 
-### For Beginners (Step-by-Step)
+Proper room allocation (ICU, Ward, OPD)
 
-1. **Download the Project**
-   ```bash
-   # If you have git:
-   git clone https://github.com/your-username/maze-solver.git
-   cd maze-solver
-   
-   # Or download as ZIP and extract
+Discharge management with cleanup
+
+Data Structures Used
+
+Linked List: Stores patients in triage order
+
+Hash Map (unordered_map): O(1) patient lookup
+
+Priority Queue: Emergency-level queue
+
+Min-Heap: Room allocation system
+
+Vector: Doctor database
+
+How to Compile
+g++ DSA_Project.cpp -o DSA_Project
+./DSA_Project
+
+Purpose
+
+To demonstrate how multiple data structures can work together to model a real system involving priority, lookup efficiency, and dynamic resource allocation.
